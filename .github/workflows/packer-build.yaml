@@ -1,0 +1,29 @@
+name: packer-build
+
+permissions: write-all
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - "./**"
+
+jobs:
+  packer_build:
+    needs: path-changed
+    runs-on: [self-hosted, enotas-iac]
+    strategy:
+      fail-fast: false
+      matrix:
+        path: ${{ fromJson(needs.path-changed.outputs.paths) }}
+    env:
+      TF_VAR_controller_github_app_private_key: ${{ secrets.TF_VAR_CONTROLLER_GITHUB_APP_PRIVATE_KEY }}
+      TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Packer build
+        with:
+          templateFile: "nomad-consul-linux-docker.json"
+          workingDir: "."
